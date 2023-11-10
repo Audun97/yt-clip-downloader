@@ -1,6 +1,6 @@
 # Import pytube and moviepy
 from pytube import YouTube
-from moviepy.editor import VideoFileClip
+from moviepy.editor import AudioFileClip, VideoFileClip
 import os
 
 # Function to convert YouTube timestamp to seconds
@@ -19,8 +19,19 @@ start_time = input("Enter start timestamp (or f to download full): ")
 
 # Create a YouTube object and download the video
 yt = YouTube(video_url)
-video = yt.streams.filter(file_extension='mp4').first()
-video.download(filename='video.mp4')
+
+# Download the highest resolution video-only and audio-only streams
+# Youtube doesn't allow to download together
+video_stream = yt.streams.filter(only_video=True).order_by('resolution').desc().first()
+audio_stream = yt.streams.filter(only_audio=True).order_by('abr').desc().first()
+
+video_stream.download(filename='video_only.mp4')
+audio_stream.download(filename='audio.mp3')
+
+video_clip = VideoFileClip('video_only.mp4')
+audio_clip = AudioFileClip('audio.mp3')
+final_clip = video_clip.set_audio(audio_clip)
+final_clip.write_videofile('video.mp4')
 
 # If the user wants to download the full video
 if start_time.lower() == 'f':
